@@ -1,6 +1,6 @@
 ---
 name: norwegian-job-finder
-description: "Scans for jobs in Norway across multiple people, each configured in their own JSON file in this skill folder. Uses Brave Search for ATS X-Ray queries, board searches, and signal-based prospecting. Requires BRAVE_API_KEY in .env."
+description: "Scans for jobs in Norway across multiple people, each configured in their own JSON file in this skill folder. Uses Brave Search for ATS X-Ray queries, board searches, and signal-based prospecting. Brave API key is configured in the gateway — use the web_search tool directly."
 ---
 
 # Norwegian Job Finder
@@ -144,7 +144,7 @@ that person's section entirely (stay silent per AGENTS.md rules).
 
 ## Error handling
 
-- If `BRAVE_API_KEY` is missing, **STOP.** Return error; do not fall back to other search engines.
+- If `web_search` returns an auth error, **STOP.** Return error; do not fall back to other search engines.
 - If a source is unreachable or returns no results, skip it and note which.
 - If a config file is malformed, skip it and name the file in the output.
 - Never fabricate job listings or signals. Only return what was actually found.
