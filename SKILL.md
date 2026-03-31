@@ -144,7 +144,7 @@ that person's section entirely (stay silent per AGENTS.md rules).
 
 ## Error handling
 
-- If `BRAVE_API_KEY` is missing, stop and tell the person to add it to `.env`.
+- If `BRAVE_API_KEY` is missing, **STOP.** Return error; do not fall back to other search engines.
 - If a source is unreachable or returns no results, skip it and note which.
 - If a config file is malformed, skip it and name the file in the output.
 - Never fabricate job listings or signals. Only return what was actually found.
