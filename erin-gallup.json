@@ -10,7 +10,17 @@
     "Product Design Lead",
     "Design Lead",
     "Director of Design",
-    "Chief Design Officer"
+    "Chief Design Officer",
+    "Founding Designer",
+    "Design Engineer",
+    "Head of Product",
+    "Product Lead",
+    "VP of Product",
+    "Designleder",
+    "Produktleder",
+    "UX-leder",
+    "Kreativ leder",
+    "Tjenestedesignleder"
   ],
   "locations": ["Oslo", "Norway", "remote"],
   "industries": ["sustainability", "climate tech", "ocean", "environment", "impact", "nonprofit", "civic tech"],
@@ -27,9 +37,10 @@
     "boards": ["jobbnorge", "finn", "linkedin"],
     "signals": {
       "leadership_changes": ["digi.no", "linkedin"],
-      "funded_companies": ["shifter.no", "funderbeam.no"]
+      "funded_companies": ["shifter.no", "funderbeam.no"],
+      "startup_ecosystems": ["katapult.vc", "startuplab.no", "meshoslo.no"]
     }
   },
-  "notes": "Prioritise mission-driven orgs in sustainability, climate, ocean, or civic tech sectors. Silicon Valley + Oslo background; has led design teams and run design thinking workshops. Founder experience (Hive Initiative).",
-  "updated_at": "2026-03-30"
+  "notes": "Prioritise mission-driven orgs in sustainability, climate, ocean, or civic tech sectors. Silicon Valley + Oslo background; has led design teams and run design thinking workshops. Founder experience (Hive Initiative). Now proficient in Lovable — can design and ship web apps independently, making her a strong fit for early-stage/pre-Series A startups needing one person to own design + prototype + ship. Also flag Founding Designer, Design Engineer, and early Head of Product roles at climate/civic tech startups.",
+  "updated_at": "2026-03-31"
 }
