@@ -1,0 +1,35 @@
+{
+  "name": "erin-gallup",
+  "person": "Erin Gallup",
+  "enabled": true,
+  "titles": [
+    "Head of Design",
+    "Design Director",
+    "Principal Product Designer",
+    "UX Lead",
+    "Product Design Lead",
+    "Design Lead",
+    "Director of Design",
+    "Chief Design Officer"
+  ],
+  "locations": ["Oslo", "Norway", "remote"],
+  "industries": ["sustainability", "climate tech", "ocean", "environment", "impact", "nonprofit", "civic tech"],
+  "dealbreakers": [],
+  "min_score": 50,
+  "sources": {
+    "ats_xray": [
+      "site:teamtailor.com \"head of design\" \"oslo\"",
+      "site:teamtailor.com \"design director\" \"norway\"",
+      "site:greenhouse.io \"head of design\" \"norway\"",
+      "site:jobbnorge.no \"designleder\"",
+      "site:jobbnorge.no \"produktdesign\" \"leder\""
+    ],
+    "boards": ["jobbnorge", "finn", "linkedin"],
+    "signals": {
+      "leadership_changes": ["digi.no", "linkedin"],
+      "funded_companies": ["shifter.no", "funderbeam.no"]
+    }
+  },
+  "notes": "Prioritise mission-driven orgs in sustainability, climate, ocean, or civic tech sectors. Silicon Valley + Oslo background; has led design teams and run design thinking workshops. Founder experience (Hive Initiative).",
+  "updated_at": "2026-03-30"
+}

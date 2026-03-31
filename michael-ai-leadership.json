@@ -1,0 +1,36 @@
+{
+  "name": "michael-ai-leadership",
+  "person": "Michael",
+  "enabled": true,
+  "titles": [
+    "Head of AI",
+    "AI Lead",
+    "Principal AI Architect",
+    "Digital transformation lead",
+    "CDO",
+    "CTO staff",
+    "Chief of Staff technical",
+    "AI program lead",
+    "AI delivery lead"
+  ],
+  "locations": ["Oslo", "Norway", "remote"],
+  "dealbreakers": [],
+  "min_score": 50,
+  "sources": {
+    "ats_xray": [
+      "site:teamtailor.com \"head of AI\" \"oslo\"",
+      "site:teamtailor.com \"AI lead\" \"oslo\"",
+      "site:greenhouse.io \"head of AI\" \"norway\"",
+      "site:myworkdayjobs.com \"AI\" \"oslo\"",
+      "site:jobbnorge.no \"kunstig intelligens\"",
+      "site:jobbnorge.no \"digitalisering\" \"leder\""
+    ],
+    "boards": ["jobbnorge", "finn", "linkedin"],
+    "signals": {
+      "leadership_changes": ["digi.no", "e24.no", "linkedin"],
+      "funded_companies": ["shifter.no", "funderbeam.no", "linkedin"]
+    }
+  },
+  "notes": "Jobbnorge is primary for public sector. finn.no/jobb is lower signal but worth a weekly sweep. LinkedIn: filter Norway, AI/Digital, past 2 weeks.",
+  "updated_at": "2026-03-30"
+}
