@@ -1,6 +1,6 @@
 ---
 name: norwegian-job-finder
-description: "Scans for jobs in Norway across multiple people, each configured in their own JSON file in this skill folder. Uses Brave Search for ATS X-Ray queries, board searches, and signal-based prospecting. Brave API key is configured in the gateway — use the web_search tool directly."
+description: "Scans for jobs in Norway using a Python script for search aggregation and deduplication, then the LLM scores and formats results. Each person has their own config JSON."
 ---
 
 # Norwegian Job Finder
@@ -11,94 +11,48 @@ description: "Scans for jobs in Norway across multiple people, each configured i
 - The person says "check for jobs", "run now", "any new jobs?", or similar
 - Optionally scoped to one person: "check jobs for Erin"
 
-## Inputs
+## Workflow
 
-Read all `*.json` files in this skill folder (`skills/norwegian-job-finder/`).
-Each file defines one independent search for one person. Skip any file that is
-not valid JSON or has `"enabled": false`.
+### Step 1 — Run the search script
 
-### Config schema
+The Python script handles all deterministic work: reading the config, building
+queries, calling Brave Search API, deduplicating against 30-day memory, and
+outputting structured JSON.
 
+```bash
+python3 workspace/skills/norwegian-job-finder/scripts/scan_jobs.py --config <filename>.json
+```
+
+The script outputs JSON with this structure:
 ```json
 {
-  "name": "slug-identifier",
-  "person": "Display Name",
-  "enabled": true,
-  "titles": ["list of job title variants to search"],
-  "locations": ["Oslo", "Norway", "remote"],
-  "industries": ["optional list — used to boost score"],
-  "dealbreakers": ["optional list — any match scores the job 0"],
-  "min_score": 50,
-  "sources": {
-    "ats_xray": [
-      "site:teamtailor.com \"title\" \"location\"",
-      "site:greenhouse.io \"title\" \"country\""
-    ],
-    "boards": ["jobbnorge", "finn", "linkedin"],
-    "signals": {
-      "leadership_changes": ["digi.no", "e24.no"],
-      "funded_companies": ["shifter.no", "funderbeam.no"]
-    }
+  "status": "ok",
+  "config": {
+    "name": "slug",
+    "person": "Display Name",
+    "titles": ["..."],
+    "locations": ["..."],
+    "industries": ["..."],
+    "dealbreakers": ["..."],
+    "min_score": 50,
+    "notes": "Context about the person..."
   },
-  "notes": "Optional free-text context visible only to the agent.",
-  "updated_at": "YYYY-MM-DD"
+  "jobs": [
+    {"title": "...", "url": "...", "description": "...", "age": "...", "source_phase": "...", "source_query": "..."}
+  ],
+  "signals": [
+    {"title": "...", "url": "...", "description": "...", "source_phase": "...", "source_query": "..."}
+  ],
+  "query_stats": {"total": 20, "succeeded": 15, "failed": 2, "empty": 3},
+  "dedup": {"jobs_skipped": 3, "signals_skipped": 0, "seen_urls_loaded": 12}
 }
 ```
 
-## Scan procedure
+If the script returns `"status": "error"`, report the error and stop.
 
-Run the full procedure for each enabled config file. Treat each config as
-independent — deduplication is tracked per `name` slug.
+### Step 2 — Score and filter (LLM)
 
-### Step 1 — ATS X-Ray
-
-For each query string in `sources.ats_xray`, call `web_search` with Brave:
-
-```
-query:    <the full query string as-is, e.g. site:teamtailor.com "head of AI" "oslo">
-count:    10
-country:  "NO"
-freshness: "month"
-```
-
-If Brave does not honour the `site:` operator (no results or irrelevant results),
-retry without the `site:` prefix and add the domain name as a keyword instead,
-e.g. `teamtailor.com "head of AI" oslo`.
-
-### Step 2 — Board search
-
-For each board in `sources.boards`, build a query from the config's title
-variants and run `web_search` with Brave:
-
-| Board | Domain | Query pattern |
-|-------|--------|---------------|
-| jobbnorge | jobbnorge.no | `site:jobbnorge.no <titles OR-joined> <location>` |
-| finn | finn.no | `site:finn.no/jobb <titles OR-joined> <location>` |
-| linkedin | linkedin.com/jobs | `site:linkedin.com/jobs <titles OR-joined> Norway` |
-
-Parameters: `count: 10`, `country: "NO"`, `freshness: "week"`.
-
-LinkedIn may block — skip and note if it fails.
-
-### Step 3 — Signal-based prospecting
-
-For each source in `sources.signals.leadership_changes`:
-```
-query:    site:<source> (CDO OR "Chief AI" OR "Head of AI" OR "Head of Design" OR "AI Lead") (appointed OR hired OR joins)
-count:    5
-freshness: "week"
-```
-
-For each source in `sources.signals.funded_companies`:
-```
-query:    site:<source> (funding OR "series A" OR "series B" OR "raised") Norway
-count:    5
-freshness: "week"
-```
-
-## Scoring
-
-For each job found in Steps 1–2, score 0–100:
+Using the JSON output, score each job 0–100:
 
 | Factor            | Weight | Logic                                                   |
 |-------------------|--------|---------------------------------------------------------|
@@ -108,15 +62,10 @@ For each job found in Steps 1–2, score 0–100:
 | Language fit      | 10%    | Norwegian required vs. person's apparent level           |
 | Dealbreaker check | 15%    | Any dealbreaker match → score = 0                        |
 
-## Deduplication
+Use the `config.notes` field for additional context about the person when scoring.
+Only keep jobs scoring ≥ `config.min_score`.
 
-Read previous memory files (`memory/YYYY-MM-DD.md`) going back 30 days.
-Skip any job URL already sent for this `name` slug within 30 days.
-After the scan, append new job URLs (keyed by slug) to today's memory file.
-
-## Output
-
-Group output by person. For each person:
+### Step 3 — Format output (LLM)
 
 **Jobs section** — only jobs scoring ≥ `min_score`:
 
@@ -129,22 +78,54 @@ Why: [1-line reason this matches]
 🔗 [Direct link]
 ```
 
-**Signals section** — if signals were configured and results found:
+**Signals section** — if signals were found:
 
 ```
 #### Signals for [Person Name]
 
-📡 **[Person/Company]** — [what happened, e.g. "New CDO at Telenor"]
-Action: [suggested next step, e.g. "Connect within 30 days"]
+📡 **[Person/Company]** — [what happened]
+Action: [suggested next step]
 🔗 [Source link]
 ```
 
-If no jobs score ≥ `min_score` and no signals are found for a person, omit
-that person's section entirely (stay silent per AGENTS.md rules).
+If no jobs score ≥ `min_score` and no signals are found, omit output entirely
+(stay silent per AGENTS.md rules).
+
+### Step 4 — Update dedup memory
+
+After formatting, append new job URLs to today's memory file
+(`workspace/memory/YYYY-MM-DD.md`) keyed by config slug so they won't be
+reported again in the next 30 days.
+
+## Config files
+
+Each `*.json` file in this skill folder defines one search config:
+
+```json
+{
+  "name": "slug-identifier",
+  "person": "Display Name",
+  "enabled": true,
+  "titles": ["list of job title variants to search"],
+  "locations": ["Oslo", "Norway", "remote"],
+  "industries": ["optional — used to boost score"],
+  "dealbreakers": ["optional — any match scores the job 0"],
+  "min_score": 50,
+  "sources": {
+    "ats_xray": ["site:teamtailor.com \"title\" \"location\""],
+    "boards": ["jobbnorge", "finn", "linkedin"],
+    "signals": {
+      "leadership_changes": ["digi.no"],
+      "funded_companies": ["shifter.no"]
+    }
+  },
+  "notes": "Optional free-text context about the person.",
+  "updated_at": "YYYY-MM-DD"
+}
+```
 
 ## Error handling
 
-- If `web_search` returns an auth error, **STOP.** Return error; do not fall back to other search engines.
-- If a source is unreachable or returns no results, skip it and note which.
-- If a config file is malformed, skip it and name the file in the output.
-- Never fabricate job listings or signals. Only return what was actually found.
+- If the script returns a Brave API auth error, **STOP.** Do not retry.
+- If `query_stats.failed > 0`, note which sources failed in your output.
+- Never fabricate job listings or signals.
