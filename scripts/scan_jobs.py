@@ -150,35 +150,74 @@ def build_ats_queries(cfg):
 
 
 def build_board_queries(cfg):
-    """Build job board queries from config."""
+    """Build job board queries from config.
+
+    Brave's site: operator is unreliable for Norwegian job boards (jobbnorge,
+    finn return zero results). Strategy:
+    - arbeidsplassen.nav.no works reliably with Brave — always include it
+    - For jobbnorge/finn: use keyword queries (domain as keyword, no site:)
+    - For linkedin: site: works, keep it
+    - Use both Norwegian and English title variants
+    """
     queries = []
-    titles = cfg["titles"][:5]  # Limit to avoid overly long queries
-    locations = cfg["locations"]
+    titles_en = [t for t in cfg["titles"] if t.isascii()][:3]
+    titles_no = [t for t in cfg["titles"] if not t.isascii() or t[0].isupper() and not t.isascii()]
+    # Grab Norwegian titles (non-ASCII) separately; fall back to all titles
+    titles_no = [t for t in cfg["titles"] if any(c in t for c in "æøåÆØÅ")][:3]
 
-    # OR-join a few title variants
-    title_str = " OR ".join(f'"{t}"' for t in titles[:3])
-    location_str = locations[0] if locations else "Norway"
+    location_str = cfg["locations"][0] if cfg["locations"] else "Norway"
 
-    board_config = {
-        "jobbnorge": {
-            "pattern": f'site:jobbnorge.no ({title_str}) {location_str}',
-        },
-        "finn": {
-            "pattern": f'site:finn.no/jobb ({title_str}) {location_str}',
-        },
-        "linkedin": {
-            "pattern": f'site:linkedin.com/jobs ({title_str}) Norway',
-        },
-    }
+    # English title OR-string
+    en_str = " OR ".join(f'"{t}"' for t in titles_en) if titles_en else ""
+    # Norwegian title OR-string
+    no_str = " OR ".join(f'"{t}"' for t in titles_no) if titles_no else ""
+
+    # arbeidsplassen.nav.no — reliable with Brave, primary source for Norwegian jobs
+    if en_str:
+        queries.append({
+            "phase": "board_arbeidsplassen",
+            "query": f'arbeidsplassen.nav.no ({en_str}) {location_str}',
+            "freshness": "week",
+        })
+    if no_str:
+        queries.append({
+            "phase": "board_arbeidsplassen_no",
+            "query": f'arbeidsplassen.nav.no ({no_str})',
+            "freshness": "week",
+        })
 
     for board in cfg["sources"].get("boards", []):
-        bc = board_config.get(board)
-        if bc:
-            queries.append({
-                "phase": f"board_{board}",
-                "query": bc["pattern"],
-                "freshness": "week",
-            })
+        if board == "linkedin":
+            # site: works for LinkedIn
+            if en_str:
+                queries.append({
+                    "phase": "board_linkedin",
+                    "query": f'site:linkedin.com/jobs ({en_str}) Norway',
+                    "freshness": "week",
+                })
+        elif board == "jobbnorge":
+            # site: unreliable — use domain as keyword
+            if en_str:
+                queries.append({
+                    "phase": "board_jobbnorge",
+                    "query": f'jobbnorge.no ({en_str}) {location_str}',
+                    "freshness": "week",
+                })
+            if no_str:
+                queries.append({
+                    "phase": "board_jobbnorge_no",
+                    "query": f'jobbnorge.no ({no_str})',
+                    "freshness": "week",
+                })
+        elif board == "finn":
+            # site: unreliable — use domain as keyword
+            if en_str:
+                queries.append({
+                    "phase": "board_finn",
+                    "query": f'finn.no jobb ({en_str}) {location_str}',
+                    "freshness": "week",
+                })
+
     return queries
 
 
@@ -401,11 +440,11 @@ def test_build_queries():
     cfg = {
         "name": "test",
         "person": "Test",
-        "titles": ["Head of AI", "AI Lead"],
+        "titles": ["Head of AI", "AI Lead", "Designleder"],
         "locations": ["Oslo", "Norway"],
         "sources": {
             "ats_xray": ['site:teamtailor.com "head of AI" "oslo"'],
-            "boards": ["jobbnorge", "finn"],
+            "boards": ["jobbnorge", "finn", "linkedin"],
             "signals": {
                 "leadership_changes": ["digi.no"],
                 "funded_companies": ["shifter.no"],
@@ -416,10 +455,16 @@ def test_build_queries():
     phases = [q["phase"] for q in queries]
     assert "ats_xray" in phases, f"Missing ats_xray in {phases}"
     assert "ats_xray_fallback" in phases, f"Missing fallback in {phases}"
+    assert "board_arbeidsplassen" in phases, f"Missing board_arbeidsplassen in {phases}"
     assert "board_jobbnorge" in phases, f"Missing board_jobbnorge in {phases}"
     assert "board_finn" in phases, f"Missing board_finn in {phases}"
+    assert "board_linkedin" in phases, f"Missing board_linkedin in {phases}"
     assert "signal_leadership" in phases, f"Missing signal_leadership in {phases}"
     assert "signal_funding" in phases, f"Missing signal_funding in {phases}"
+    # Verify no site: used for Norwegian boards
+    for q in queries:
+        if q["phase"] in ("board_jobbnorge", "board_jobbnorge_no", "board_finn"):
+            assert "site:" not in q["query"], f"site: used for {q['phase']}: {q['query']}"
     return f"{len(queries)} queries built across {len(set(phases))} phases"
 
 
