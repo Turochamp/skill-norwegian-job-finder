@@ -20,6 +20,7 @@ import argparse
 import gzip
 import json
 import logging
+import os
 import sys
 import time
 import urllib.error
@@ -30,9 +31,10 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SKILL_DIR = Path(__file__).resolve().parent.parent
-WORKSPACE_DIR = SKILL_DIR.parent.parent  # ~/.openclaw/workspace
+STATE_DIR = Path(os.environ["OPENCLAW_STATE_DIR"])
+WORKSPACE_DIR = STATE_DIR / "workspace"
 MEMORY_DIR = WORKSPACE_DIR / "memory"
-OPENCLAW_CONFIG = Path.home() / ".openclaw" / "openclaw.json"
+OPENCLAW_CONFIG = STATE_DIR / "openclaw.json"
 
 BRAVE_API_URL = "https://api.search.brave.com/res/v1/web/search"
 SERPER_API_URL = "https://google.serper.dev/search"
