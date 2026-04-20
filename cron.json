@@ -8,7 +8,7 @@
       "timeoutSeconds": 300,
       "delivery": {
         "channel": "telegram",
-        "to": "-1003711449566:topic:32"
+        "to": "CONFIGURE_ME"
       },
       "prompt": "IMPORTANT: All exec commands are pre-approved. Run scripts directly.\n\nRun the norwegian-job-finder skill. Read skills/norwegian-job-finder/SKILL.md and follow the workflow.\n\nStep 1: Run python3 skills/norwegian-job-finder/scripts/scan_jobs.py --config michael-ai-leadership.json\nStep 2: Score and filter the JSON results.\nStep 3: Format the output.\nStep 4: Update dedup memory."
     },
@@ -20,7 +20,7 @@
       "timeoutSeconds": 300,
       "delivery": {
         "channel": "telegram",
-        "to": "-1003711449566:topic:32"
+        "to": "CONFIGURE_ME"
       },
       "prompt": "IMPORTANT: All exec commands are pre-approved. Run scripts directly.\n\nRun the norwegian-job-finder skill. Read skills/norwegian-job-finder/SKILL.md and follow the workflow.\n\nStep 1: Run python3 skills/norwegian-job-finder/scripts/scan_jobs.py --config erin-gallup.json\nStep 2: Score and filter the JSON results.\nStep 3: Format the output.\nStep 4: Update dedup memory."
     }
